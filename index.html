@@ -1,22 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Engine System</title>
+<title>Engine System Pro</title>
 
 <style>
 body { display: flex; font-family: Arial; }
 
-.sidebar { width: 250px; background: #2c3e50; color: white; padding: 10px; }
+.sidebar {
+    width: 250px;
+    background: #2c3e50;
+    color: white;
+    padding: 10px;
+}
 
-.group { background: #34495e; margin: 5px; padding: 8px; cursor: pointer; }
-
+.group { background: #34495e; padding: 8px; margin: 5px; cursor: pointer; }
 .engine { padding: 5px 15px; background: #3f5c75; cursor: pointer; }
 
 .main { flex: 1; padding: 20px; }
 
-input, button { padding: 6px; margin: 4px; }
-.box { background: #eee; padding: 10px; margin: 10px 0; }
+input, button {
+    padding: 6px;
+    margin: 4px;
+}
 
+.box {
+    background: #eee;
+    padding: 10px;
+    margin: 10px 0;
+}
 </style>
 </head>
 
@@ -42,15 +53,14 @@ input, button { padding: 6px; margin: 4px; }
 <script>
 
 let data = JSON.parse(localStorage.getItem("data")) || [];
-
 let currentEngine = null;
 
 function save() {
     localStorage.setItem("data", JSON.stringify(data));
 }
 
+// ✅ Add Engine
 function addEngine() {
-
     let desc = descI.value;
     let pn = pnI.value;
     let sn = snI.value;
@@ -65,7 +75,10 @@ function addEngine() {
         data.push(group);
     }
 
-    group.engines.push({ pn, sn, bs, trends: [] });
+    group.engines.push({
+        pn, sn, bs,
+        trends: []
+    });
 
     save();
     render();
@@ -73,6 +86,7 @@ function addEngine() {
     descI.value = pnI.value = snI.value = bsI.value = "";
 }
 
+// ✅ Sidebar
 function render() {
 
     sidebar.innerHTML = "";
@@ -82,14 +96,12 @@ function render() {
         let gDiv = document.createElement("div");
         gDiv.className = "group";
         gDiv.innerText = g.description;
-
-        gDiv.onclick = () => toggleGroup(gi);
-
+        gDiv.onclick = () => toggle(gi);
         sidebar.appendChild(gDiv);
 
-        let engList = document.createElement("div");
-        engList.id = "g" + gi;
-        engList.style.display = "none";
+        let list = document.createElement("div");
+        list.id = "g" + gi;
+        list.style.display = "none";
 
         g.engines.forEach((e, ei) => {
 
@@ -102,65 +114,76 @@ function render() {
                 showEngine(gi, ei);
             };
 
-            engList.appendChild(eDiv);
+            list.appendChild(eDiv);
         });
 
-        sidebar.appendChild(engList);
+        sidebar.appendChild(list);
     });
 }
 
-function toggleGroup(i) {
+function toggle(i) {
     let el = document.getElementById("g" + i);
     el.style.display = el.style.display === "none" ? "block" : "none";
 }
 
+// ✅ Show Engine
 function showEngine(gi, ei) {
 
     currentEngine = data[gi].engines[ei];
 
-    let html = `
-        <h3>Engine</h3>
+    let open = 0;
+    let closed = 0;
 
+    currentEngine.trends.forEach(t => {
+        t.actions.forEach(a => {
+            if (a.response) closed++;
+            else open++;
+        });
+    });
+
+    details.innerHTML = `
+        <h3>Engine Details</h3>
         <p>P/N: ${currentEngine.pn}</p>
         <p>S/N: ${currentEngine.sn}</p>
         <p>BS: ${currentEngine.bs}</p>
 
-        <h3>Add Trend</h3>
+        <h4>Dashboard</h4>
+        <p>Open Actions: ${open}</p>
+        <p>Closed Actions: ${closed}</p>
 
+        <h3>Add Trend</h3>
         <input id="trendType" placeholder="Trend Type">
         <button onclick="addTrend()">Add Trend</button>
 
         <div id="trendList"></div>
     `;
 
-    details.innerHTML = html;
-
     renderTrends();
 }
 
+// ✅ Add Trend
 function addTrend() {
-
-    let type = document.getElementById("trendType").value;
-
+    let type = trendType.value;
     if (!type) return;
 
-    currentEngine.trends.push({ type, actions: [] });
+    currentEngine.trends.push({
+        type,
+        actions: []
+    });
 
     save();
     renderTrends();
 }
 
+// ✅ Render Trends
 function renderTrends() {
 
-    let div = document.getElementById("trendList");
+    let div = trendList;
     div.innerHTML = "";
 
     currentEngine.trends.forEach((t, ti) => {
 
-        let trendDiv = document.createElement("div");
-        trendDiv.className = "box";
-
-        let html = `
+        let html = `<div class="box">
             <h4>${t.type}</h4>
 
             <input id="action${ti}" placeholder="Action">
@@ -169,23 +192,26 @@ function renderTrends() {
             <button onclick="addAction(${ti})">Add</button>
         `;
 
-        t.actions.forEach((a, ai) => {
+        t.actions.forEach(a => {
 
-            let status = a.response ? "✅ Closed" : "❌ Open";
+            let status = a.response ? "✅ CLOSED" : "❌ OPEN";
 
             html += `
                 <p>
-                - ${a.action} → ${a.response || "No response"} (${status})
+                [${a.date}]
+                ${a.action} → ${a.response || "NO RESPONSE"}
+                (${status})
                 </p>
             `;
         });
 
-        trendDiv.innerHTML = html;
+        html += "</div>";
 
-        div.appendChild(trendDiv);
+        div.innerHTML += html;
     });
 }
 
+// ✅ Add Action
 function addAction(ti) {
 
     let action = document.getElementById("action" + ti).value;
@@ -194,11 +220,17 @@ function addAction(ti) {
     if (!action) return;
 
     if (!response) {
-        alert("❌ لازم تضيف Response عشان تقفل الأكشن");
+        alert("❌ لازم Response عشان يقفل");
         return;
     }
 
-    currentEngine.trends[ti].actions.push({ action, response });
+    let date = new Date().toLocaleDateString();
+
+    currentEngine.trends[ti].actions.push({
+        action,
+        response,
+        date
+    });
 
     save();
     renderTrends();
@@ -210,3 +242,4 @@ render();
 
 </body>
 </html>
+``
