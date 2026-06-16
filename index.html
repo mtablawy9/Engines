@@ -1,65 +1,41 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>Engine System</title>
+<title>Engine System</title>
 
-    <style>
-        body {
-            display: flex;
-            font-family: Arial;
-        }
+<style>
+body { display: flex; font-family: Arial; }
 
-        .sidebar {
-            width: 250px;
-            background: #2c3e50;
-            color: white;
-            padding: 10px;
-        }
+.sidebar { width: 250px; background: #2c3e50; color: white; padding: 10px; }
 
-        .group {
-            background: #34495e;
-            margin: 5px 0;
-            padding: 8px;
-            cursor: pointer;
-        }
+.group { background: #34495e; margin: 5px; padding: 8px; cursor: pointer; }
 
-        .engine {
-            padding: 5px 15px;
-            background: #3f5c75;
-            cursor: pointer;
-        }
+.engine { padding: 5px 15px; background: #3f5c75; cursor: pointer; }
 
-        .main {
-            flex: 1;
-            padding: 20px;
-        }
+.main { flex: 1; padding: 20px; }
 
-        input, button {
-            padding: 8px;
-            margin: 5px;
-        }
-    </style>
+input, button { padding: 6px; margin: 4px; }
+.box { background: #eee; padding: 10px; margin: 10px 0; }
+
+</style>
 </head>
 
 <body>
 
-<!-- LEFT -->
 <div class="sidebar" id="sidebar"></div>
 
-<!-- RIGHT -->
 <div class="main">
 
-    <h2>Add Engine</h2>
+<h2>Add Engine</h2>
 
-    <input id="desc" placeholder="Description (Engine Type)">
-    <input id="pn" placeholder="P/N">
-    <input id="sn" placeholder="S/N">
-    <input id="bs" placeholder="Build Specs">
+<input id="desc" placeholder="Description">
+<input id="pn" placeholder="P/N">
+<input id="sn" placeholder="S/N">
+<input id="bs" placeholder="BS">
 
-    <button onclick="addEngine()">Add</button>
+<button onclick="addEngine()">Add</button>
 
-    <div id="details"></div>
+<div id="details"></div>
 
 </div>
 
@@ -67,16 +43,18 @@
 
 let data = JSON.parse(localStorage.getItem("data")) || [];
 
+let currentEngine = null;
+
 function save() {
     localStorage.setItem("data", JSON.stringify(data));
 }
 
 function addEngine() {
 
-    let desc = document.getElementById("desc").value;
-    let pn = document.getElementById("pn").value;
-    let sn = document.getElementById("sn").value;
-    let bs = document.getElementById("bs").value;
+    let desc = descI.value;
+    let pn = pnI.value;
+    let sn = snI.value;
+    let bs = bsI.value;
 
     if (!desc || !pn || !sn || !bs) return;
 
@@ -87,73 +65,143 @@ function addEngine() {
         data.push(group);
     }
 
-    group.engines.push({ pn, sn, bs });
+    group.engines.push({ pn, sn, bs, trends: [] });
 
     save();
     render();
 
-    document.getElementById("desc").value = "";
-    document.getElementById("pn").value = "";
-    document.getElementById("sn").value = "";
-    document.getElementById("bs").value = "";
+    descI.value = pnI.value = snI.value = bsI.value = "";
 }
 
 function render() {
 
-    let sidebar = document.getElementById("sidebar");
     sidebar.innerHTML = "";
 
-    data.forEach((group, gIndex) => {
+    data.forEach((g, gi) => {
 
-        let div = document.createElement("div");
-        div.className = "group";
-        div.innerText = group.description;
+        let gDiv = document.createElement("div");
+        gDiv.className = "group";
+        gDiv.innerText = g.description;
 
-        div.onclick = function () {
-            toggleGroup(gIndex);
-        };
+        gDiv.onclick = () => toggleGroup(gi);
 
-        sidebar.appendChild(div);
+        sidebar.appendChild(gDiv);
 
-        let engineList = document.createElement("div");
-        engineList.id = "group" + gIndex;
-        engineList.style.display = "none";
+        let engList = document.createElement("div");
+        engList.id = "g" + gi;
+        engList.style.display = "none";
 
-        group.engines.forEach((e, eIndex) => {
+        g.engines.forEach((e, ei) => {
 
-            let eng = document.createElement("div");
-            eng.className = "engine";
-            eng.innerText = e.sn;
+            let eDiv = document.createElement("div");
+            eDiv.className = "engine";
+            eDiv.innerText = e.sn;
 
-            eng.onclick = function (event) {
-                event.stopPropagation();
-                showDetails(gIndex, eIndex);
+            eDiv.onclick = (ev) => {
+                ev.stopPropagation();
+                showEngine(gi, ei);
             };
 
-            engineList.appendChild(eng);
+            engList.appendChild(eDiv);
         });
 
-        sidebar.appendChild(engineList);
+        sidebar.appendChild(engList);
     });
 }
 
-function toggleGroup(index) {
-    let div = document.getElementById("group" + index);
-
-    div.style.display = div.style.display === "none" ? "block" : "none";
+function toggleGroup(i) {
+    let el = document.getElementById("g" + i);
+    el.style.display = el.style.display === "none" ? "block" : "none";
 }
 
-function showDetails(gIndex, eIndex) {
+function showEngine(gi, ei) {
 
-    let e = data[gIndex].engines[eIndex];
+    currentEngine = data[gi].engines[ei];
 
-    document.getElementById("details").innerHTML = `
-        <h3>Engine Details</h3>
-        <p><b>Description:</b> ${data[gIndex].description}</p>
-        <p><b>P/N:</b> ${e.pn}</p>
-        <p><b>S/N:</b> ${e.sn}</p>
-        <p><b>Build Specs:</b> ${e.bs}</p>
+    let html = `
+        <h3>Engine</h3>
+
+        <p>P/N: ${currentEngine.pn}</p>
+        <p>S/N: ${currentEngine.sn}</p>
+        <p>BS: ${currentEngine.bs}</p>
+
+        <h3>Add Trend</h3>
+
+        <input id="trendType" placeholder="Trend Type">
+        <button onclick="addTrend()">Add Trend</button>
+
+        <div id="trendList"></div>
     `;
+
+    details.innerHTML = html;
+
+    renderTrends();
+}
+
+function addTrend() {
+
+    let type = document.getElementById("trendType").value;
+
+    if (!type) return;
+
+    currentEngine.trends.push({ type, actions: [] });
+
+    save();
+    renderTrends();
+}
+
+function renderTrends() {
+
+    let div = document.getElementById("trendList");
+    div.innerHTML = "";
+
+    currentEngine.trends.forEach((t, ti) => {
+
+        let trendDiv = document.createElement("div");
+        trendDiv.className = "box";
+
+        let html = `
+            <h4>${t.type}</h4>
+
+            <input id="action${ti}" placeholder="Action">
+            <input id="response${ti}" placeholder="Response">
+
+            <button onclick="addAction(${ti})">Add</button>
+        `;
+
+        t.actions.forEach((a, ai) => {
+
+            let status = a.response ? "✅ Closed" : "❌ Open";
+
+            html += `
+                <p>
+                - ${a.action} → ${a.response || "No response"} (${status})
+                </p>
+            `;
+        });
+
+        trendDiv.innerHTML = html;
+
+        div.appendChild(trendDiv);
+    });
+}
+
+function addAction(ti) {
+
+    let action = document.getElementById("action" + ti).value;
+    let response = document.getElementById("response" + ti).value;
+
+    if (!action) return;
+
+    if (!response) {
+        alert("❌ لازم تضيف Response عشان تقفل الأكشن");
+        return;
+    }
+
+    currentEngine.trends[ti].actions.push({ action, response });
+
+    save();
+    renderTrends();
 }
 
 render();
@@ -161,5 +209,4 @@ render();
 </script>
 
 </body>
-
 </html>
