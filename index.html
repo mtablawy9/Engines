@@ -59,12 +59,13 @@ function save() {
     localStorage.setItem("data", JSON.stringify(data));
 }
 
-// ✅ Add Engine
+// ✅ ✅ FIXED هنا
 function addEngine() {
-    let desc = descI.value;
-    let pn = pnI.value;
-    let sn = snI.value;
-    let bs = bsI.value;
+
+    let desc = document.getElementById("desc").value;
+    let pn = document.getElementById("pn").value;
+    let sn = document.getElementById("sn").value;
+    let bs = document.getElementById("bs").value;
 
     if (!desc || !pn || !sn || !bs) return;
 
@@ -83,12 +84,15 @@ function addEngine() {
     save();
     render();
 
-    descI.value = pnI.value = snI.value = bsI.value = "";
+    document.getElementById("desc").value = "";
+    document.getElementById("pn").value = "";
+    document.getElementById("sn").value = "";
+    document.getElementById("bs").value = "";
 }
 
-// ✅ Sidebar
 function render() {
 
+    let sidebar = document.getElementById("sidebar");
     sidebar.innerHTML = "";
 
     data.forEach((g, gi) => {
@@ -96,7 +100,9 @@ function render() {
         let gDiv = document.createElement("div");
         gDiv.className = "group";
         gDiv.innerText = g.description;
+
         gDiv.onclick = () => toggle(gi);
+
         sidebar.appendChild(gDiv);
 
         let list = document.createElement("div");
@@ -126,7 +132,6 @@ function toggle(i) {
     el.style.display = el.style.display === "none" ? "block" : "none";
 }
 
-// ✅ Show Engine
 function showEngine(gi, ei) {
 
     currentEngine = data[gi].engines[ei];
@@ -141,7 +146,7 @@ function showEngine(gi, ei) {
         });
     });
 
-    details.innerHTML = `
+    document.getElementById("details").innerHTML = `
         <h3>Engine Details</h3>
         <p>P/N: ${currentEngine.pn}</p>
         <p>S/N: ${currentEngine.sn}</p>
@@ -161,9 +166,10 @@ function showEngine(gi, ei) {
     renderTrends();
 }
 
-// ✅ Add Trend
 function addTrend() {
-    let type = trendType.value;
+
+    let type = document.getElementById("trendType").value;
+
     if (!type) return;
 
     currentEngine.trends.push({
@@ -175,10 +181,9 @@ function addTrend() {
     renderTrends();
 }
 
-// ✅ Render Trends
 function renderTrends() {
 
-    let div = trendList;
+    let div = document.getElementById("trendList");
     div.innerHTML = "";
 
     currentEngine.trends.forEach((t, ti) => {
@@ -211,7 +216,6 @@ function renderTrends() {
     });
 }
 
-// ✅ Add Action
 function addAction(ti) {
 
     let action = document.getElementById("action" + ti).value;
@@ -242,4 +246,3 @@ render();
 
 </body>
 </html>
-``
