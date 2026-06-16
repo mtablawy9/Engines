@@ -2,27 +2,31 @@
 <html>
 
 <head>
-    <title>Engine Management System</title>
+    <title>Engine System</title>
 
     <style>
         body {
-            font-family: Arial;
-            margin: 0;
             display: flex;
+            font-family: Arial;
         }
 
         .sidebar {
-            width: 200px;
+            width: 250px;
             background: #2c3e50;
             color: white;
             padding: 10px;
-            overflow-y: auto;
         }
 
-        .engine-item {
+        .group {
             background: #34495e;
-            padding: 10px;
             margin: 5px 0;
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .engine {
+            padding: 5px 15px;
+            background: #3f5c75;
             cursor: pointer;
         }
 
@@ -35,206 +39,126 @@
             padding: 8px;
             margin: 5px;
         }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: center;
-        }
-
-        th {
-            background: #eee;
-        }
-
-        .btn-delete {
-            background: red;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-edit {
-            background: orange;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
     </style>
 </head>
 
 <body>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <h3>Engines</h3>
-        <div id="engineList"></div>
-    </div>
+<!-- LEFT -->
+<div class="sidebar" id="sidebar"></div>
 
-    <!-- Main -->
-    <div class="main">
+<!-- RIGHT -->
+<div class="main">
 
-        <h2>Engine Management</h2>
+    <h2>Add Engine</h2>
 
-        <input id="pn" placeholder="P/N">
-        <input id="sn" placeholder="S/N">
-        <input id="bs" placeholder="Build Specs">
+    <input id="desc" placeholder="Description (Engine Type)">
+    <input id="pn" placeholder="P/N">
+    <input id="sn" placeholder="S/N">
+    <input id="bs" placeholder="Build Specs">
 
-        <button onclick="addEngine()">Add</button>
+    <button onclick="addEngine()">Add</button>
 
-        <br>
+    <div id="details"></div>
 
-        <input id="search" placeholder="Search P/N or S/N" onkeyup="filterEngines()">
+</div>
 
-        <button onclick="exportCSV()">Export Excel</button>
+<script>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>P/N</th>
-                    <th>S/N</th>
-                    <th>BS</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="engineTable"></tbody>
-        </table>
+let data = JSON.parse(localStorage.getItem("data")) || [];
 
-    </div>
+function save() {
+    localStorage.setItem("data", JSON.stringify(data));
+}
 
-    <script>
+function addEngine() {
 
-        let engines = JSON.parse(localStorage.getItem("engines")) || [];
+    let desc = document.getElementById("desc").value;
+    let pn = document.getElementById("pn").value;
+    let sn = document.getElementById("sn").value;
+    let bs = document.getElementById("bs").value;
 
-        function saveData() {
-            localStorage.setItem("engines", JSON.stringify(engines));
-        }
+    if (!desc || !pn || !sn || !bs) return;
 
-        function addEngine() {
+    let group = data.find(d => d.description === desc);
 
-            let pn = document.getElementById("pn").value;
-            let sn = document.getElementById("sn").value;
-            let bs = document.getElementById("bs").value;
+    if (!group) {
+        group = { description: desc, engines: [] };
+        data.push(group);
+    }
 
-            if (!pn || !sn || !bs) return;
+    group.engines.push({ pn, sn, bs });
 
-            engines.push({ pn, sn, bs });
+    save();
+    render();
 
-            saveData();
+    document.getElementById("desc").value = "";
+    document.getElementById("pn").value = "";
+    document.getElementById("sn").value = "";
+    document.getElementById("bs").value = "";
+}
 
-            updateUI();
+function render() {
 
-            pn = sn = bs = "";
-            document.getElementById("pn").value = "";
-            document.getElementById("sn").value = "";
-            document.getElementById("bs").value = "";
-        }
+    let sidebar = document.getElementById("sidebar");
+    sidebar.innerHTML = "";
 
-        function updateUI() {
-            updateList();
-            updateTable();
-        }
+    data.forEach((group, gIndex) => {
 
-        function updateList() {
-            let list = document.getElementById("engineList");
-            list.innerHTML = "";
+        let div = document.createElement("div");
+        div.className = "group";
+        div.innerText = group.description;
 
-            engines.forEach((e, i) => {
+        div.onclick = function () {
+            toggleGroup(gIndex);
+        };
 
-                let div = document.createElement("div");
-                div.className = "engine-item";
-                div.innerText = e.sn;
+        sidebar.appendChild(div);
 
-                div.onclick = () => showDetails(i);
+        let engineList = document.createElement("div");
+        engineList.id = "group" + gIndex;
+        engineList.style.display = "none";
 
-                list.appendChild(div);
-            });
-        }
+        group.engines.forEach((e, eIndex) => {
 
-        function updateTable(filtered = engines) {
-            let table = document.getElementById("engineTable");
-            table.innerHTML = "";
+            let eng = document.createElement("div");
+            eng.className = "engine";
+            eng.innerText = e.sn;
 
-            filtered.forEach((e, i) => {
+            eng.onclick = function (event) {
+                event.stopPropagation();
+                showDetails(gIndex, eIndex);
+            };
 
-                let row = `
-                    <tr>
-                        <td>${e.pn}</td>
-                        <td>${e.sn}</td>
-                        <td>${e.bs}</td>
-                        <td>
-                            <button class="btn-edit" onclick="editEngine(${i})">Edit</button>
-                            <button class="btn-delete" onclick="deleteEngine(${i})">Delete</button>
-                        </td>
-                    </tr>
-                `;
+            engineList.appendChild(eng);
+        });
 
-                table.innerHTML += row;
-            });
-        }
+        sidebar.appendChild(engineList);
+    });
+}
 
-        function deleteEngine(index) {
-            engines.splice(index, 1);
-            saveData();
-            updateUI();
-        }
+function toggleGroup(index) {
+    let div = document.getElementById("group" + index);
 
-        function editEngine(index) {
+    div.style.display = div.style.display === "none" ? "block" : "none";
+}
 
-            let e = engines[index];
+function showDetails(gIndex, eIndex) {
 
-            document.getElementById("pn").value = e.pn;
-            document.getElementById("sn").value = e.sn;
-            document.getElementById("bs").value = e.bs;
+    let e = data[gIndex].engines[eIndex];
 
-            deleteEngine(index);
-        }
+    document.getElementById("details").innerHTML = `
+        <h3>Engine Details</h3>
+        <p><b>Description:</b> ${data[gIndex].description}</p>
+        <p><b>P/N:</b> ${e.pn}</p>
+        <p><b>S/N:</b> ${e.sn}</p>
+        <p><b>Build Specs:</b> ${e.bs}</p>
+    `;
+}
 
-        function filterEngines() {
+render();
 
-            let value = document.getElementById("search").value.toLowerCase();
-
-            let filtered = engines.filter(e =>
-                e.pn.toLowerCase().includes(value) ||
-                e.sn.toLowerCase().includes(value)
-            );
-
-            updateTable(filtered);
-        }
-
-        function showDetails(index) {
-            alert(
-                "P/N: " + engines[index].pn +
-                "\nS/N: " + engines[index].sn +
-                "\nBS: " + engines[index].bs
-            );
-        }
-
-        function exportCSV() {
-
-            let csv = "P/N,S/N,BS\n";
-
-            engines.forEach(e => {
-                csv += `${e.pn},${e.sn},${e.bs}\n`;
-            });
-
-            let blob = new Blob([csv], { type: 'text/csv' });
-            let a = document.createElement("a");
-
-            a.href = URL.createObjectURL(blob);
-            a.download = "engines.csv";
-
-            a.click();
-        }
-
-        updateUI();
-
-    </script>
+</script>
 
 </body>
 
