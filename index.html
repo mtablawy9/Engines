@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Engine Management</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            display: flex;
+        }
+
+        /* الشمال */
+        .sidebar {
+            width: 200px;
+            background: #2c3e50;
+            color: white;
+            padding: 10px;
+        }
+
+        .sidebar h3 {
+            text-align: center;
+        }
+
+        .engine-item {
+            background: #34495e;
+            padding: 10px;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+
+        /* اليمين */
+        .main {
+            padding: 20px;
+            flex: 1;
+        }
+
+        input, button {
+            padding: 8px;
+            margin: 5px;
+        }
+
+        .card {
+            background: #ecf0f1;
+            padding: 15px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- الشمال -->
+    <div class="sidebar">
+        <h3>Engines</h3>
+        <div id="engineList"></div>
+    </div>
+
+    <!-- اليمين -->
+    <div class="main">
+
+        <h2>Add Engine</h2>
+
+        <input type="text" id="pn" placeholder="P/N">
+        <input type="text" id="sn" placeholder="S/N">
+        <input type="text" id="bs" placeholder="Build Specs">
+
+        <button onclick="addEngine()">Add Engine</button>
+
+        <div class="card" id="engineDetails">
+            <h3>Engine Details</h3>
+            <p>Select an engine...</p>
+        </div>
+
+    </div>
+
+    <script>
+
+        let engines = [];
+
+        function addEngine() {
+
+            let pn = document.getElementById("pn").value;
+            let sn = document.getElementById("sn").value;
+            let bs = document.getElementById("bs").value;
+
+            if (pn === "" || sn === "" || bs === "") return;
+
+            let engine = {
+                pn: pn,
+                sn: sn,
+                bs: bs
+            };
+
+            engines.push(engine);
+
+            updateList();
+
+            // reset
+            document.getElementById("pn").value = "";
+            document.getElementById("sn").value = "";
+            document.getElementById("bs").value = "";
+        }
+
+        function updateList() {
+
+            let list = document.getElementById("engineList");
+            list.innerHTML = "";
+
+            engines.forEach((engine, index) => {
+
+                let div = document.createElement("div");
+                div.className = "engine-item";
+
+                div.innerText = engine.sn; // يظهر S/N في القائمة
+
+                div.onclick = function() {
+                    showDetails(index);
+                };
+
+                list.appendChild(div);
+            });
+        }
+
+        function showDetails(index) {
+
+            let engine = engines[index];
+
+            let details = document.getElementById("engineDetails");
+
+            details.innerHTML = `
+                <h3>Engine Details</h3>
+                <p><b>P/N:</b> ${engine.pn}</p>
+                <p><b>S/N:</b> ${engine.sn}</p>
+                <p><b>Build Specs:</b> ${engine.bs}</p>
+            `;
+        }
+
+    </script>
+
+</body>
+
+</html>
